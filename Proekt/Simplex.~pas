@@ -1,0 +1,203 @@
+unit Simplex;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, Grids;
+
+ type
+  TMetod_simplex = class
+    Procedure Poisk_Stroki();
+    Procedure Poisk_Stolbca();
+    Procedure Opor_resh();
+    Procedure Optim_resh();
+    Procedure Pereschot();
+
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+var
+  Metod: TMetod_simplex;
+
+
+
+implementation
+uses  Unit1;
+
+Procedure TMetod_simplex.Poisk_Stroki();  // Поиск разрешающей строки
+var
+i,j:integer;
+t:real;
+begin
+ for j:=1 to 3 do
+        c[1,j]:=strtofloat(unit1.Form1.Simpleks_Table.Cells[1,j]);
+      for j:=1 to 3 do
+        unit1.c[2,j]:=strtofloat(unit1.Form1.Simpleks_Table.Cells[unit1.i_max,j]);
+      for j:=1 to 3 do
+        if (unit1.c[1,j]=0) or (unit1.c[2,j]=0) then  unit1.c[3,j]:=0
+        else unit1.c[3,j]:=unit1.c[1,j]/unit1.c[2,j];
+
+      for i:=1 to 3 do
+        for j:=1 to 4 do
+          Unit1.Form1.Otnashenie_Table.Cells[i,j]:=floattostr(unit1.c[j,i]);
+
+      t:=abs(unit1.c[3,1]);
+      unit1.j_min:=1;
+      for i:=1 to 3 do
+        begin
+          if (unit1.c[3,i]<>0) then
+            if (t>abs(unit1.c[3,i]))and(unit1.c[4,i]<>0) then
+              begin
+                t:=abs(unit1.c[3,i]);
+                unit1.j_min:=i;
+              end;
+        end;
+      unit1.Form1.Simpleks_Table.Refresh;
+      unit1.c[4,j_min]:=0;
+
+end;
+
+Procedure TMetod_simplex.Poisk_Stolbca();  // Поиск разрешающей столбца
+var
+i,j:integer;
+t,max,min:real;
+begin
+max:=Unit1.a2[4,1];
+  for i:=1 to 4 do
+    if unit1.a2[4,i]>=max then
+      begin
+        max:=unit1.a2[4,i];
+        unit1.i_max:=i;
+      end;
+min:=unit1.a3[4,1];
+  for i:=1 to 4 do
+    if unit1.a3[4,i]<=min then
+      begin
+        min:=unit1.a3[4,i];
+        unit1.i_stol:=i;
+      end;
+end;
+
+procedure TMetod_simplex.Opor_resh();  // проверка опорного решения
+var
+  i,j,r,g:integer;
+  t,max,min:real;
+begin
+j_str:=-1;
+for i:=1 to 3 do
+    if a3[i,1]<0 then
+                begin
+                  unit1.i_stol:=0;
+                  for r:=2 to 4 do
+                    if unit1.i_stol=0 then
+                      for j:=1 to 3 do
+                        if unit1.a3[j,r]<0 then
+                           begin
+                              unit1.i_stol:=r;
+                              break;
+                            end;
+                  for j:=1 to 3 do
+                      begin
+                        if unit1.a3[j,1]>0 then unit1.c2[j,2]:=0;
+
+                        unit1.c2[j,1]:=unit1.a3[j,1]/unit1.a3[j,i_stol];
+
+                      end;
+
+                  min:=100;
+                  for j:=1 to 3 do
+                    if (unit1.c2[j,1]<=min)and(unit1.c2[j,2]=1) then
+                            begin
+                              min:=unit1.c2[j,1];
+                              unit1.j_str:=j;
+                            end;
+                   for j:=1 to 3 do
+                      unit1.c2[j,2]:=1;
+                   unit1.c2[j_str,2]:=0;
+
+                  break;
+                end;
+   Form1.Dual_table.Refresh;
+end;
+
+procedure TMetod_simplex.Optim_resh();  // проверка оптимального решения
+var
+  i,j,r:integer;
+  t,max,min:real;
+
+begin
+unit1.j_str:=-1;
+for i:=1 to 3 do
+                begin
+                  if unit1.e= 1 then
+                    for j:=1 to 3 do
+                      begin
+                        unit1.c2[j,2]:=1;
+                        unit1.e:=0;
+                      end;
+                  max:=-1;
+                  for r:=2 to 4 do
+                        if (unit1.a3[4,r]>max)and(unit1.a3[4,r]>0) then
+                           begin
+                              max:=unit1.a3[4,r];
+                              unit1.i_stol:=r;
+                            end;
+                  if max=-1 then Form1.Dual.Enabled:=false;
+                  for j:=1 to 3 do
+                      begin
+
+                        unit1.c2[j,1]:=unit1.a3[j,1]/unit1.a3[j,unit1.i_stol];
+
+                      end;
+
+                  min:=100;
+                  for j:=1 to 3 do
+                    if (unit1.c2[j,1]<=min)and(unit1.c2[j,2]=1) then
+                            begin
+                              min:=unit1.c2[j,1];
+                              unit1.j_str:=j;
+                            end;
+                   for j:=1 to 3 do
+                      unit1.c2[j,2]:=1;
+                   unit1.c2[unit1.j_str,2]:=0;
+
+                  break;
+                end;
+   Form1.Dual_table.Refresh;
+end;
+
+Procedure TMetod_simplex.Pereschot();
+var
+  i,j:integer;
+  b:array [1..4,1..4] of real;
+  s:string;
+begin
+if unit1.a3[unit1.j_str,unit1.i_stol]<>0 then
+        for i:=1 to 4 do
+          for j:=1 to 4 do
+            begin
+              if (unit1.j_str<>i)and(unit1.i_stol<>j) then  b[i,j]:=a3[i,j]-((unit1.a3[unit1.j_str,j]*a3[i,unit1.i_stol])/unit1.a3[unit1.j_str,unit1.i_stol])
+              else if (unit1.j_str=i)and(unit1.i_stol<>j)then b[i,j]:=unit1.a3[i,j]/a3[unit1.j_str,unit1.i_stol]
+              else if (unit1.j_str<>i)and(unit1.i_stol=j)then b[i,j]:=unit1.a3[i,j]/(-1*unit1.a3[unit1.j_str,unit1.i_stol])
+              else if (unit1.j_str=i)and(unit1.i_stol=j)then  b[i,j]:=1/unit1.a3[unit1.j_str,unit1.i_stol];
+            end
+      else b[i,j]:=unit1.a3[i,j];
+s:=Form1.Dual_table.Cells[i_stol,0];
+Form1.Dual_table.Cells[i_stol,0]:=Form1.Dual_table.Cells[0,j_str];
+Form1.Dual_table.Cells[0,j_str]:=s;
+
+
+for i:=1 to 4 do
+  for j:=1 to 4 do
+    begin
+      unit1.a3[i,j]:=b[i,j];
+      Form1.Dual_table.Cells[j,i]:=floattostr(unit1.a3[i,j]);
+    end;
+     Form1.Dual_table.Refresh;
+end;
+
+end.
+
